@@ -7,6 +7,7 @@ import api from '../api';
 
 const CadastroVideosPage = ({ language = 'pt' }) => {
   const [link, setLink] = useState('');
+  const [titulo, setTitulo] = useState('');
   const [categoria, setCategoria] = useState('');
   const [topicos, setTopicos] = useState([]);
   const [topicosSelecionados, setTopicosSelecionados] = useState([]);
@@ -36,7 +37,7 @@ const CadastroVideosPage = ({ language = 'pt' }) => {
   };
 
   const handleSubmit = async () => {
-    if (!link.trim() || !categoria || topicosSelecionados.length === 0) {
+    if (!link.trim() || !titulo.trim() || !categoria || topicosSelecionados.length === 0) {
       setErrorMessage('Preencha todos os campos obrigatórios.');
       return;
     }
@@ -44,11 +45,13 @@ const CadastroVideosPage = ({ language = 'pt' }) => {
     try {
       await api.post('/videos', {
         link,
+        titulo,
         categoria, // Já está em caixa alta sem acento (ex: 'SERMAO')
         topicoIds: topicosSelecionados,
       });
       setSuccessMessage('Vídeo cadastrado com sucesso!');
       setLink('');
+      setTitulo('');
       setCategoria('');
       setTopicosSelecionados([]);
     } catch (error) {
@@ -65,6 +68,14 @@ const CadastroVideosPage = ({ language = 'pt' }) => {
       <Typography variant="h4" gutterBottom>
         Cadastro de Vídeos
       </Typography>
+
+      <TextField
+        fullWidth
+        label="Título do vídeo"
+        value={titulo}
+        onChange={(e) => setTitulo(e.target.value)}
+        margin="normal"
+      />
 
       <TextField
         fullWidth

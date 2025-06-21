@@ -1,3 +1,5 @@
+// src/pages/ListaVideosPage.js
+
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -18,6 +20,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import axios from '../api';
 import ReactPlayer from 'react-player';
+import { translations } from '../i18n';
 
 const ListaVideosPage = () => {
   const [videos, setVideos] = useState([]);
@@ -27,30 +30,42 @@ const ListaVideosPage = () => {
   const [selectedLang, setSelectedLang] = useState('pt');
   const [videoSelecionado, setVideoSelecionado] = useState(null);
 
+  const t = translations[selectedLang];
+
   useEffect(() => {
-    fetchVideos();
     fetchTopicos();
-  }, [selectedLang]);
+  }, []);
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      fetchVideos();
+    }, 500);
+
+    return () => clearTimeout(delayDebounce);
+  }, [search, selectedTopico, selectedLang]);
 
   const fetchVideos = async () => {
-    const res = await axios.get('/videos', {
-      params: {
-        lang: selectedLang,
-        search,
-        topico: selectedTopico,
-      },
-    });
-    setVideos(res.data);
+    try {
+      const res = await axios.get('/videos', {
+        params: {
+          lang: selectedLang,
+          search,
+          topico: selectedTopico,
+        },
+      });
+      setVideos(res.data);
+    } catch (error) {
+      console.error('Erro ao buscar vídeos:', error);
+    }
   };
 
   const fetchTopicos = async () => {
-    const res = await axios.get('/topicos');
-    setTopicos(res.data);
-  };
-
-  const categorias = {
-    SEMINARIO: 'Classes',
-    SERMAO: 'Sermons',
+    try {
+      const res = await axios.get('/topicos');
+      setTopicos(res.data);
+    } catch (error) {
+      console.error('Erro ao buscar tópicos:', error);
+    }
   };
 
   const groupedVideos = videos.reduce((acc, video) => {
@@ -63,40 +78,37 @@ const ListaVideosPage = () => {
     <Box p={4}>
       <Box display="flex" justifyContent="space-between" mb={4} flexWrap="wrap" gap={2}>
         <TextField
-          label="Buscar vídeos"
+          label={t.search}
           variant="outlined"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onBlur={fetchVideos}
           style={{ minWidth: 200 }}
         />
         <FormControl variant="outlined" style={{ minWidth: 200 }}>
-          <InputLabel>Idioma</InputLabel>
+          <InputLabel>{t.language}</InputLabel>
           <Select
-            label="Idioma"
+            label={t.language}
             value={selectedLang}
             onChange={(e) => setSelectedLang(e.target.value)}
           >
-            <MenuItem value="pt"><span className="fi fi-br" style={{ marginRight: 8 }}></span>
-              Português Brasil
-            </MenuItem>
-            <MenuItem value="en"><span className="fi fi-us" style={{ marginRight: 8 }}></span> Inglês</MenuItem>
-            <MenuItem value="tr"><span className="fi fi-tr" style={{ marginRight: 8 }}></span> Turco</MenuItem>
-            <MenuItem value="ar"><span className="fi fi-sa" style={{ marginRight: 8 }}></span> Árabe</MenuItem>
-            <MenuItem value="fa"><span className="fi fi-ir" style={{ marginRight: 8 }}></span> Persa</MenuItem>
+            <MenuItem value="pt"><span className="fi fi-br" style={{ marginRight: 8 }}></span> Português Brasil</MenuItem>
+            <MenuItem value="en"><span className="fi fi-us" style={{ marginRight: 8 }}></span> English</MenuItem>
+            <MenuItem value="tr"><span className="fi fi-tr" style={{ marginRight: 8 }}></span> Türkçe</MenuItem>
+            <MenuItem value="ar"><span className="fi fi-sa" style={{ marginRight: 8 }}></span> العربية</MenuItem>
+            <MenuItem value="fa"><span className="fi fi-ir" style={{ marginRight: 8 }}></span> فارسی</MenuItem>
           </Select>
         </FormControl>
         <FormControl variant="outlined" style={{ minWidth: 200 }}>
-          <InputLabel>Filtrar por tópico</InputLabel>
+          <InputLabel>{t.filterTopic}</InputLabel>
           <Select
-            label="Filtrar por tópico"
+            label={t.filterTopic}
             value={selectedTopico}
             onChange={(e) => setSelectedTopico(e.target.value)}
           >
-            <MenuItem value="">Todos</MenuItem>
-            {topicos.map((t) => (
-              <MenuItem key={t.id} value={t.id}>
-                {t.traducoes?.[selectedLang] || t.nome}
+            <MenuItem value="">{t.all}</MenuItem>
+            {topicos.map((tpc) => (
+              <MenuItem key={tpc.id} value={tpc.id}>
+                {tpc.traducoes?.[selectedLang] || tpc.nome}
               </MenuItem>
             ))}
           </Select>
@@ -106,7 +118,7 @@ const ListaVideosPage = () => {
       {Object.entries(groupedVideos).map(([categoria, vids]) => (
         <Box key={categoria} mb={6}>
           <Typography variant="h5" gutterBottom>
-            {categorias[categoria] || categoria}
+            {t.categories[categoria] || categoria}
           </Typography>
           <Grid container spacing={2} wrap="nowrap" style={{ overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: 8 }}>
             {vids.map((video) => (
@@ -121,27 +133,26 @@ const ListaVideosPage = () => {
                     style={{ cursor: 'pointer' }}
                   />
                   <CardContent>
-                  <Typography
-                    variant="h6"
-                    fontWeight="bold"
-                    color="primary"
-                    gutterBottom
-                    sx={{ minHeight: '3rem' }} // mantém altura uniforme
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      color="primary"
+                      gutterBottom
+                      sx={{ minHeight: '3rem' }}
                     >
-                    {video.titulo}
+                      {video.titulo}
                     </Typography>
-
                     <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                    {video.topicos.map((t) => (
+                      {video.topicos.map((t) => (
                         <Chip
-                        key={t.id}
-                        label={t.traducoes?.[selectedLang] || t.nome}
-                        variant="filled"
-                        color="secondary"
-                        size="small"
-                        sx={{ fontSize: '0.75rem' }}
+                          key={t.id}
+                          label={t.traducoes?.[selectedLang] || t.nome}
+                          variant="filled"
+                          color="secondary"
+                          size="small"
+                          sx={{ fontSize: '0.75rem' }}
                         />
-                    ))}
+                      ))}
                     </Box>
                   </CardContent>
                 </Card>
@@ -156,33 +167,33 @@ const ListaVideosPage = () => {
         onClose={() => setVideoSelecionado(null)}
         maxWidth="md"
         fullWidth
-        scroll="body" // evita scroll interno
+        scroll="body"
         PaperProps={{
-            style: {
-            overflow: 'hidden', // remove scroll extra
+          style: {
+            overflow: 'hidden',
             backgroundColor: 'black',
-            },
+          },
         }}
-        >
+      >
         <Box position="relative" paddingTop="56.25%">
-            <IconButton
+          <IconButton
             onClick={() => setVideoSelecionado(null)}
             style={{ position: 'absolute', top: 8, right: 8, color: 'white', zIndex: 10 }}
             aria-label="fechar"
-            >
+          >
             <CloseIcon />
-            </IconButton>
+          </IconButton>
 
-            {videoSelecionado && (
+          {videoSelecionado && (
             <ReactPlayer
-                url={videoSelecionado.link}
-                controls
-                playing
-                width="100%"
-                height="100%"
-                style={{ position: 'absolute', top: 0, left: 0 }}
+              url={videoSelecionado.link}
+              controls
+              playing
+              width="100%"
+              height="100%"
+              style={{ position: 'absolute', top: 0, left: 0 }}
             />
-            )}
+          )}
         </Box>
       </Dialog>
     </Box>

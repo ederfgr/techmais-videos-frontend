@@ -27,7 +27,9 @@ export default function MFAPage() {
       const res = await api.post(`/auth/validate-mfa?userId=${userId}&code=${code}`);
       const token = res.data.accessToken;
       localStorage.setItem('token', token);
-      navigate('/videos/cadastro'); 
+      //navigate('/videos/cadastro'); 
+      //trocar por useContext
+      window.location.href = '/videos/cadastro'; // força reload com novo token
     } catch (err) {
       setError('Código inválido ou expirado.');
       setOpenSnackbar(true);
